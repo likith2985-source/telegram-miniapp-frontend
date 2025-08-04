@@ -3,11 +3,10 @@ const BASE_URL = "https://telegram-miniapp-backend-x5no.onrender.com"; // Backen
 const tg = window.Telegram.WebApp; // Telegram WebApp object
 tg.expand(); // Make app fullscreen
 
-// ======= USER PROFILE LOGIC =======
 const user = tg.initDataUnsafe?.user || {};
 const botUsername = tg.initDataUnsafe?.bot?.username || "";
 
-// ======= REGISTER USER ON LOAD & INITIAL DISPLAY =======
+// ======= MAIN ENTRY: On Load =======
 window.onload = async () => {
   // Register user with backend
   if (user && user.id) {
@@ -23,10 +22,7 @@ window.onload = async () => {
       })
     });
   }
-
-  // Show profile
   displayUserProfile();
-  // Load Home on startup
   goHome();
 };
 
@@ -41,7 +37,7 @@ function displayUserProfile() {
   }
 }
 
-// ======= NAVIGATION SCREENS =======
+// ======= NAVIGATION FUNCTIONS =======
 function goHome() {
   document.getElementById("content").innerHTML = `
     <h3>📺 Watch Ads & Earn</h3>
@@ -79,7 +75,7 @@ function showProfile() {
 
 // ======= MAIN ACTIONS =======
 async function watchAdProcess() {
-  // Call Monetag/rewarded ad SDK function; simulate with async for now
+  // Replace this line with your Monetag ad or rewarded ad logic
   show_9666357().then(async () => {
     // Reward the user after ad is completed
     const res = await fetch(`${BASE_URL}/add-earning`, {
@@ -104,3 +100,34 @@ function requestWithdrawal() {
   alert("💸 Withdrawal request sent (mock).");
   // Implement real withdrawal API call if needed
 }
+
+// ======= TASKS RENDERING =======
+function renderTasks(user) {
+  const taskContainer = document.getElementById('taskContainer');
+  taskContainer.innerHTML = '';
+
+  if (user.tasks && user.tasks.length > 0) {
+    user.tasks.forEach((taskObj, index) => {
+      const taskEl = document.createElement('div');
+      taskEl.className = 'task-box';
+      taskEl.innerHTML = `
+        <strong>Task ${index + 1}</strong><br>
+        ${taskObj.task}<br>
+        <small>${new Date(taskObj.time).toLocaleString()}</small>
+        <hr>
+      `;
+      taskContainer.appendChild(taskEl);
+    });
+  } else {
+    taskContainer.innerHTML = '<p>No tasks assigned yet.</p>';
+  }
+}
+
+// ======= FETCH USER DATA AND RENDER INFO & TASKS =======
+// Replace 'your-backend-url.onrender.com' and ensure userId is defined in scope!
+fetch('https://telegram-miniapp-backend-x5no.onrender.com/get-user?id=' + userId)
+  .then(res => res.json())
+  .then(user => {
+    renderUserInfo(user); // Make sure renderUserInfo is defined elsewhere
+    renderTasks(user);
+  });
