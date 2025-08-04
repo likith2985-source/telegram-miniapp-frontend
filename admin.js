@@ -1,41 +1,46 @@
-const API = 'https://your-render-api-url.com'; // replace with actual
+// admin.js
+const API_URL = 'https://telegram-miniapp-backend-x5no.onrender.com'; // Replace with actual Render backend URL
 
-async function loadWithdrawals() {
-  const res = await fetch(`${API}/withdrawals`);
-  const data = await res.json();
-  const tbody = document.querySelector("#withdrawal-table tbody");
-  tbody.innerHTML = "";
-  data.forEach(req => {
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${req.username}</td>
-      <td>${req.amount}</td>
-      <td>${req.status}</td>
-      <td><button onclick="approve('${req.id}')">Approve</button></td>
-    `;
-    tbody.appendChild(row);
-  });
+// Load withdrawal requests
+window.onload = function () {
+  fetch(`${API_URL}/withdrawals`)
+    .then(res => res.json())
+    .then(data => {
+      const table = document.querySelector('#withdrawal-table tbody');
+      data.forEach(req => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${req.user}</td>
+          <td>${req.amount}</td>
+          <td>${req.status}</td>
+          <td>
+            <button onclick="updateStatus(${req.id}, 'approved')">Approve</button>
+            <button onclick="updateStatus(${req.id}, 'rejected')">Reject</button>
+          </td>
+        `;
+        table.appendChild(row);
+      });
+    });
+};
+
+function updateStatus(id, status) {
+  fetch(`${API_URL}/withdrawals/${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ status })
+  }).then(() => location.reload());
 }
 
-async function approve(id) {
-  await fetch(`${API}/withdrawals/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status: "approved" })
-  });
-  loadWithdrawals();
-}
-
-async function sendTask() {
-  const task = document.getElementById("task").value;
-  if (!task) return alert("Please enter a task.");
-  await fetch(`${API}/tasks`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+function sendTask() {
+  const task = document.getElementById('task').value;
+  fetch(`${API_URL}/tasks`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
     body: JSON.stringify({ task })
-  });
-  alert("Task sent to users!");
-  document.getElementById("task").value = "";
+  })
+    .then(() => alert('Task sent to all users!'));
 }
-
-loadWithdrawals();
