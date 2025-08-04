@@ -8,13 +8,10 @@ const botUsername = tg.initDataUnsafe?.bot?.username || "";
 
 // ======= MAIN ENTRY: On Load =======
 window.onload = async () => {
-  // Register user with backend
   if (user && user.id) {
     await fetch(`${BASE_URL}/register`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         id: user.id,
         name: user.first_name,
@@ -22,8 +19,10 @@ window.onload = async () => {
       })
     });
   }
+
   displayUserProfile();
-  goHome();
+  fetchUserData();
+  goHome(); // Default screen
 };
 
 // ======= DISPLAY USER PROFILE =======
@@ -37,73 +36,21 @@ function displayUserProfile() {
   }
 }
 
-// ======= NAVIGATION FUNCTIONS =======
-function goHome() {
-  document.getElementById("content").innerHTML = `
-    <h3>📺 Watch Ads & Earn</h3>
-    <button id="watchAdBtn">Watch Ad</button>
-  `;
-  // Attach event handler
-  const watchBtn = document.getElementById("watchAdBtn");
-  if (watchBtn) watchBtn.addEventListener("click", watchAdProcess);
-}
-
-function showWithdrawals() {
-  document.getElementById("content").innerHTML = `
-    <h3>💰 Withdrawal</h3>
-    <p>Invite 5 friends before withdrawing.</p>
-    <button onclick="requestWithdrawal()">Request Withdrawal</button>
-  `;
-}
-
-function showReferrals() {
-  const referralLink = user?.id ? `https://t.me/${botUsername}?start=${user.id}` : '';
-  document.getElementById("content").innerHTML = `
-    <h3>👥 Invite Friends</h3>
-    <p>Share your link to earn rewards:</p>
-    <input type="text" value="${referralLink}" readonly style="width: 100%; padding: 8px;">
-  `;
-}
-
-function showProfile() {
-  document.getElementById("content").innerHTML = `
-    <h3>👤 Your Profile</h3>
-    <p>Name: ${user?.first_name}</p>
-    <p>ID: ${user?.id}</p>
-  `;
-}
-
-// ======= MAIN ACTIONS =======
-async function watchAdProcess() {
-  // Replace this line with your Monetag ad or rewarded ad logic
-  show_9666357().then(async () => {
-    // Reward the user after ad is completed
-    const res = await fetch(`${BASE_URL}/add-earning`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        userId: user.id,
-        amount: 1 // reward amount
-      })
+// ======= FETCH USER DATA & RENDER =======
+function fetchUserData() {
+  fetch(`${BASE_URL}/get-user?id=${user.id}`)
+    .then(res => res.json())
+    .then(userData => {
+      renderUserInfo(userData); // Define this in HTML
+      renderTasks(userData);
     });
-
-    const data = await res.json();
-    alert(`You've earned 1 coin! Total: ${data.totalEarnings}`);
-  }).catch(() => {
-    alert("Ad was skipped or failed.");
-  });
 }
 
-function requestWithdrawal() {
-  alert("💸 Withdrawal request sent (mock).");
-  // Implement real withdrawal API call if needed
-}
-
-// ======= TASKS RENDERING =======
+// ======= TASK RENDERING =======
 function renderTasks(user) {
   const taskContainer = document.getElementById('taskContainer');
+  if (!taskContainer) return;
+
   taskContainer.innerHTML = '';
 
   if (user.tasks && user.tasks.length > 0) {
@@ -123,11 +70,75 @@ function renderTasks(user) {
   }
 }
 
-// ======= FETCH USER DATA AND RENDER INFO & TASKS =======
-// Replace 'your-backend-url.onrender.com' and ensure userId is defined in scope!
-fetch('https://telegram-miniapp-backend-x5no.onrender.com/get-user?id=' + userId)
-  .then(res => res.json())
-  .then(user => {
-    renderUserInfo(user); // Make sure renderUserInfo is defined elsewhere
-    renderTasks(user);
+// ======= MAIN NAVIGATION =======
+function goHome() {
+  document.getElementById("content").innerHTML = `
+    <h3>📺 Watch Ads & Earn</h3>
+    <button id="watchAdBtn">Watch Ad</button>
+  `;
+  document.getElementById("watchAdBtn").addEventListener("click", watchAdProcess);
+}
+
+function showReferrals() {
+  const referralLink = user?.id ? `https://t.me/${botUsername}?start=${user.id}` : '';
+  document.getElementById("content").innerHTML = `
+    <h3>👥 Invite Friends</h3>
+    <p>Share your link to earn rewards:</p>
+    <input type="text" value="${referralLink}" readonly style="width: 100%; padding: 8px;">
+  `;
+}
+
+function showProfile() {
+  document.getElementById("content").innerHTML = `
+    <h3>👤 Your Profile</h3>
+    <p>Name: ${user?.first_name}</p>
+    <p>ID: ${user?.id}</p>
+  `;
+}
+
+function showWithdrawals() {
+  document.getElementById("content").innerHTML = `
+    <h3>💸 Withdraw</h3>
+    <button id="withdrawBtn">Request Withdrawal</button>
+    <p id="withdrawMessage"></p>
+  `;
+
+  document.getElementById('withdrawBtn').addEventListener('click', () => {
+    fetch(`${BASE_URL}/withdraw-request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: user.id })
+    })
+      .then(res => {
+        if (!res.ok) return res.text().then(text => Promise.reject(text));
+        return res.text();
+      })
+      .then(msg => {
+        document.getElementById('withdrawMessage').innerText = msg;
+      })
+      .catch(err => {
+        document.getElementById('withdrawMessage').innerText = err;
+      });
   });
+}
+
+// ======= AD WATCH & REWARD =======
+async function watchAdProcess() {
+  show_9666357()
+    .then(async () => {
+      const res = await fetch(`${BASE_URL}/add-earning`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          amount: 1
+        })
+      });
+
+      const data = await res.json();
+      alert(`You've earned 1 coin! Total: ${data.totalEarnings}`);
+    })
+    .catch(() => {
+      alert("Ad was skipped or failed.");
+    });
+}
