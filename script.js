@@ -1,45 +1,55 @@
-const BASE_URL = "https://telegram-miniapp-backend-x5no.onrender.com"; // Your actual URL
+// ======= CONSTANTS & INITIALIZATION =======
+const BASE_URL = "https://telegram-miniapp-backend-x5no.onrender.com"; // Backend URL
+const tg = window.Telegram.WebApp; // Telegram WebApp object
+tg.expand(); // Make app fullscreen
 
-const tg = window.Telegram.WebApp;
-tg.expand();
+// ======= USER PROFILE LOGIC =======
+const user = tg.initDataUnsafe?.user || {};
+const botUsername = tg.initDataUnsafe?.bot?.username || "";
 
-const user = {
-  id: tg.initDataUnsafe.user.id,
-  name: tg.initDataUnsafe.user.first_name,
-  username: tg.initDataUnsafe.user.username,
-};
-
-// Register user when the app loads
+// ======= REGISTER USER ON LOAD & INITIAL DISPLAY =======
 window.onload = async () => {
-  await fetch(`${BASE_URL}/register`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(user)
-  });
+  // Register user with backend
+  if (user && user.id) {
+    await fetch(`${BASE_URL}/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        id: user.id,
+        name: user.first_name,
+        username: user.username
+      })
+    });
+  }
+
+  // Show profile
+  displayUserProfile();
+  // Load Home on startup
+  goHome();
 };
 
-// Step 5: script.js (Telegram WebApp API Integration & Button Actions)
+// ======= DISPLAY USER PROFILE =======
+function displayUserProfile() {
+  const profileDiv = document.getElementById('profile');
+  if (profileDiv) {
+    profileDiv.innerHTML = `
+      <p><strong>User:</strong> ${user?.first_name || 'Guest'}</p>
+      <p><strong>ID:</strong> ${user?.id || 'Unknown'}</p>
+    `;
+  }
+}
 
-let tg = window.Telegram.WebApp;
-tg.expand(); // Make it fullscreen
-
-const user = tg.initDataUnsafe.user;
-
-// Display user profile
-const profileDiv = document.getElementById('profile');
-profileDiv.innerHTML = `
-  <p><strong>User:</strong> ${user?.first_name || 'Guest'}</p>
-  <p><strong>ID:</strong> ${user?.id || 'Unknown'}</p>
-`;
-
-// Navigation logic
+// ======= NAVIGATION SCREENS =======
 function goHome() {
   document.getElementById("content").innerHTML = `
     <h3>📺 Watch Ads & Earn</h3>
-    <button onclick="watchAd()">Watch Ad</button>
+    <button id="watchAdBtn">Watch Ad</button>
   `;
+  // Attach event handler
+  const watchBtn = document.getElementById("watchAdBtn");
+  if (watchBtn) watchBtn.addEventListener("click", watchAdProcess);
 }
 
 function showWithdrawals() {
@@ -51,7 +61,7 @@ function showWithdrawals() {
 }
 
 function showReferrals() {
-  const referralLink = `https://t.me/${tg.initDataUnsafe?.bot?.username}?start=${user?.id}`;
+  const referralLink = user?.id ? `https://t.me/${botUsername}?start=${user.id}` : '';
   document.getElementById("content").innerHTML = `
     <h3>👥 Invite Friends</h3>
     <p>Share your link to earn rewards:</p>
@@ -67,16 +77,30 @@ function showProfile() {
   `;
 }
 
-function watchAd() {
-  alert("🪙 Ad watched. Reward will be added (mock).");
-  // Later: integrate with Monetag script here
+// ======= MAIN ACTIONS =======
+async function watchAdProcess() {
+  // Call Monetag/rewarded ad SDK function; simulate with async for now
+  show_9666357().then(async () => {
+    // Reward the user after ad is completed
+    const res = await fetch(`${BASE_URL}/add-earning`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        userId: user.id,
+        amount: 1 // reward amount
+      })
+    });
+
+    const data = await res.json();
+    alert(`You've earned 1 coin! Total: ${data.totalEarnings}`);
+  }).catch(() => {
+    alert("Ad was skipped or failed.");
+  });
 }
 
 function requestWithdrawal() {
   alert("💸 Withdrawal request sent (mock).");
-  // Later: send POST to backend API
+  // Implement real withdrawal API call if needed
 }
-
-// Load Home on startup
-goHome();
-
