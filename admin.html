@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Panel</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f9f9f9; }
+    h1 { color: #333; }
+    .section { margin-bottom: 30px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    button { padding: 5px 10px; }
+  </style>
+</head>
+<body>
+  <h1>Admin Panel</h1>
+
+  <div class="section">
+    <h2>Withdrawal Requests</h2>
+    <table id="withdrawal-table">
+      <thead>
+        <tr><th>User</th><th>Amount</th><th>Status</th><th>Action</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Send New Task</h2>
+    <input type="text" id="task" placeholder="Enter new task">
+    <button onclick="sendTask()">Send</button>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
